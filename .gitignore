@@ -1,0 +1,12 @@
+
+venv/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.vscode/
+
+data/*.xlsx
+data/*.csv
+
+.DS_Store
