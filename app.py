@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import io
 
 from pathlib import Path
 
@@ -10,7 +11,7 @@ from pathlib import Path
 
 st.set_page_config(
     page_title="Modelo de predicción de dengue",
-    page_icon="🧬",
+    page_icon="assets/healthicon.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -72,6 +73,21 @@ METRICAS = pd.DataFrame({
 
 st.markdown("""
 <style>
+    /* Ocultar la barra superior de Streamlit (Compartir, favorito,
+       editar y acceso al repositorio), sin afectar la aplicación. */
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    [data-testid="stStatusWidget"],
+    .stAppDeployButton {
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+    }
+
+    header[data-testid="stHeader"] {
+        background: transparent !important;
+    }
+
     :root {
         --navy: #174B3A;
         --navy-2: #237A57;
@@ -386,6 +402,261 @@ st.markdown("""
     #MainMenu, footer {
         visibility: hidden;
     }
+
+    /* Forzar apariencia clara en selectores y menús desplegables */
+    [data-testid="stSelectbox"] [data-baseweb="select"],
+    [data-testid="stMultiSelect"] [data-baseweb="select"],
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div,
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        color: #263B32 !important;
+        border-color: #C9D9CE !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stSelectbox"] [data-baseweb="select"] *,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] * {
+        color: #263B32 !important;
+    }
+
+    /* Zona de la flecha: evita el bloque negro del tema oscuro */
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div > div:last-child,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div > div:last-child,
+    div[data-baseweb="select"] > div > div:last-child {
+        background-color: #EAF6EF !important;
+        border-left: 1px solid #C9D9CE !important;
+        border-radius: 0 3px 3px 0 !important;
+    }
+
+    [data-testid="stSelectbox"] [data-baseweb="select"] svg,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] svg,
+    div[data-baseweb="select"] svg {
+        color: #237A57 !important;
+        fill: #237A57 !important;
+    }
+
+    /* Menús desplegados */
+    [data-baseweb="popover"],
+    [data-baseweb="popover"] *,
+    [data-baseweb="menu"],
+    [data-baseweb="menu"] *,
+    ul[role="listbox"],
+    ul[role="listbox"] *,
+    li[role="option"],
+    div[role="option"] {
+        background-color: #FFFFFF !important;
+        color: #263B32 !important;
+    }
+
+    li[role="option"]:hover,
+    div[role="option"]:hover,
+    li[role="option"][aria-selected="true"] {
+        background-color: #EAF6EF !important;
+        color: #174B3A !important;
+    }
+
+    /* Carga de Excel */
+    [data-testid="stFileUploader"],
+    [data-testid="stFileUploader"] section,
+    [data-testid="stFileUploader"] section > div {
+        background-color: #FFFFFF !important;
+        color: #263B32 !important;
+        border-color: #C9D9CE !important;
+    }
+
+    [data-testid="stFileUploader"] button {
+        background-color: #EAF6EF !important;
+        color: #176B4B !important;
+        border: 1px solid #BFD9C8 !important;
+        border-radius: 3px !important;
+    }
+
+    [data-testid="stFileUploader"] small,
+    [data-testid="stFileUploader"] span,
+    [data-testid="stFileUploader"] label {
+        color: #52665A !important;
+    }
+
+    /* Navegación superior: botones cuadrados, sin selección negra/roja */
+    [data-testid="stSegmentedControl"] > div {
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
+        gap: 8px !important;
+    }
+
+    [data-testid="stSegmentedControl"] button,
+    [data-testid="stSegmentedControl"] button p {
+        background: #FFFFFF !important;
+        color: #315544 !important;
+        border: 1px solid #CFE0D4 !important;
+        border-radius: 3px !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stSegmentedControl"] button[aria-pressed="true"],
+    [data-testid="stSegmentedControl"] button[aria-pressed="true"] p {
+        background: #237A57 !important;
+        color: #FFFFFF !important;
+        border-color: #237A57 !important;
+    }
+
+    [data-testid="stSegmentedControl"] button:hover {
+        border-color: #269B68 !important;
+    }
+
+    /* Evitar fondos oscuros heredados en controles nativos */
+    [data-testid="stNumberInput"] button,
+    [data-testid="stDateInput"] button,
+    [data-testid="stTimeInput"] button {
+        background-color: #EAF6EF !important;
+        color: #237A57 !important;
+        border-color: #C9D9CE !important;
+    }
+
+
+    /* Navegación superior: botones Streamlit normales con estilo verde claro */
+    [class*="st-key-btn_nav_inicio"] button,
+    [class*="st-key-btn_nav_prediccion"] button,
+    div[data-testid="stButton"]:has(button[kind="secondary"]) button {
+        border-radius: 3px !important;
+        box-shadow: none !important;
+        font-weight: 600 !important;
+        min-height: 2.45rem !important;
+    }
+
+    [class*="st-key-btn_nav_inicio"] button[kind="secondary"],
+    [class*="st-key-btn_nav_prediccion"] button[kind="secondary"] {
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        color: #245640 !important;
+        border: 1px solid #BFD8C8 !important;
+    }
+
+    [class*="st-key-btn_nav_inicio"] button[kind="primary"],
+    [class*="st-key-btn_nav_prediccion"] button[kind="primary"] {
+        background: #DDF1E4 !important;
+        background-color: #DDF1E4 !important;
+        color: #174B3A !important;
+        border: 1px solid #70B58D !important;
+    }
+
+    [class*="st-key-btn_nav_inicio"] button:hover,
+    [class*="st-key-btn_nav_prediccion"] button:hover {
+        background: #CBE8D6 !important;
+        background-color: #CBE8D6 !important;
+        color: #174B3A !important;
+        border-color: #70B58D !important;
+    }
+
+    [class*="st-key-btn_nav_inicio"] button p,
+    [class*="st-key-btn_nav_prediccion"] button p {
+        color: inherit !important;
+    }
+
+
+    /* Corrección específica del segmento de flecha de los selectbox */
+    [data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div,
+    div[data-baseweb="select"] > div {
+        background: #FFFFFF !important;
+        background-color: #FFFFFF !important;
+        color: #263B32 !important;
+        border: 1px solid #C9D9CE !important;
+        border-radius: 4px !important;
+    }
+
+    /* BaseWeb dibuja la flecha en un contenedor separado al extremo derecho. */
+    [data-testid="stSelectbox"] [data-baseweb="select"] [aria-hidden="true"],
+    [data-testid="stMultiSelect"] [data-baseweb="select"] [aria-hidden="true"],
+    div[data-baseweb="select"] [aria-hidden="true"] {
+        background: #EAF6EF !important;
+        background-color: #EAF6EF !important;
+        color: #237A57 !important;
+        border-left: 1px solid #C9D9CE !important;
+        border-radius: 0 3px 3px 0 !important;
+        box-shadow: none !important;
+    }
+
+    [data-testid="stSelectbox"] [data-baseweb="select"] [aria-hidden="true"] svg,
+    [data-testid="stMultiSelect"] [data-baseweb="select"] [aria-hidden="true"] svg,
+    div[data-baseweb="select"] [aria-hidden="true"] svg {
+        color: #237A57 !important;
+        fill: #237A57 !important;
+        stroke: #237A57 !important;
+        background: transparent !important;
+    }
+
+    /* Refuerzo para el botón/indicador desplegable en distintas versiones */
+    [data-testid="stSelectbox"] [data-baseweb="select"] [role="button"],
+    [data-testid="stMultiSelect"] [data-baseweb="select"] [role="button"],
+    div[data-baseweb="select"] [role="button"] {
+        background: #EAF6EF !important;
+        color: #237A57 !important;
+        border-color: #C9D9CE !important;
+    }
+
+
+    /* Botones principales: texto blanco y fondo verde */
+    [data-testid="stButton"] button[kind="primary"],
+    [data-testid="stFormSubmitButton"] button[kind="primary"],
+    button[kind="primary"] {
+        background: #237A57 !important;
+        background-color: #237A57 !important;
+        color: #FFFFFF !important;
+        border-color: #237A57 !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+    [data-testid="stButton"] button[kind="primary"] *,
+    [data-testid="stFormSubmitButton"] button[kind="primary"] *,
+    button[kind="primary"] *,
+    button[kind="primary"] p {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        opacity: 1 !important;
+    }
+    [data-testid="stButton"] button[kind="primary"]:hover,
+    [data-testid="stFormSubmitButton"] button[kind="primary"]:hover,
+    button[kind="primary"]:hover {
+        background: #195F43 !important;
+        background-color: #195F43 !important;
+        color: #FFFFFF !important;
+    }
+
+
+
+    /* Contraste de los botones de acción principales */
+    [data-testid="stButton"] button[kind="primary"],
+    [data-testid="stFormSubmitButton"] button,
+    [data-testid="stForm"] button[kind="primary"],
+    button[kind="primary"] {
+        background-color: #237A57 !important;
+        border: 1px solid #237A57 !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+    }
+
+    [data-testid="stButton"] button[kind="primary"] *,
+    [data-testid="stFormSubmitButton"] button *,
+    [data-testid="stForm"] button[kind="primary"] *,
+    button[kind="primary"] *,
+    [data-testid="stButton"] button[kind="primary"] p,
+    [data-testid="stFormSubmitButton"] button p {
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        opacity: 1 !important;
+    }
+
+    [data-testid="stButton"] button[kind="primary"]:hover,
+    [data-testid="stFormSubmitButton"] button:hover,
+    [data-testid="stForm"] button[kind="primary"]:hover,
+    button[kind="primary"]:hover {
+        background-color: #195F43 !important;
+        border-color: #195F43 !important;
+        color: #FFFFFF !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -488,6 +759,194 @@ def mostrar_resultado(nombre, modelo, entrada):
 
 
 
+
+# ============================================================
+# PREDICCIÓN MASIVA DESDE EXCEL
+# ============================================================
+
+def preparar_excel_lote(archivo):
+    """
+    Acepta un Excel con las 18 variables ya preparadas o un Excel
+    con las variables clínicas originales y los valores de laboratorio.
+    Los indicadores derivados se calculan con los umbrales del formulario.
+    """
+    original = pd.read_excel(archivo)
+    if original.empty:
+        raise ValueError("El archivo Excel no contiene registros.")
+
+    df = original.copy()
+    # Normalizar encabezados: espacios exteriores y mayúsculas.
+    df.columns = [str(c).strip().upper().replace("\\n", " ") for c in df.columns]
+
+    alias = {
+        "AGE": ["AGE", "EDAD"],
+        "GENDER": ["GENDER", "GENERO", "GÉNERO", "SEXO"],
+        "DURATION OF FEVER": [
+            "DURATION OF FEVER", "FEVER DURATION", "DURATION OF FEVER (DAYS)",
+            "DIAS DE FIEBRE", "DÍAS DE FIEBRE", "DURACION DE FIEBRE",
+            "DURACIÓN DE FIEBRE"
+        ],
+        "HEADACHE": ["HEADACHE", "DOLOR DE CABEZA"],
+        "MYALGIA": ["MYALGIA", "DOLOR MUSCULAR"],
+        "ABDOMINAL PAIN": ["ABDOMINAL PAIN", "DOLOR ABDOMINAL"],
+        "RASH": ["RASH", "ERUPCION", "ERUPCIÓN"],
+        "VOMITING": ["VOMITING", "VOMITOS", "VÓMITOS"],
+        "BREATHLESSNESS": ["BREATHLESSNESS", "DIFICULTAD RESPIRATORIA"],
+        "BLEEDING": ["BLEEDING", "SANGRADO"],
+        "BP AT ADMISSION": [
+            "BP AT ADMISSION", "BLOOD PRESSURE AT ADMISSION",
+            "PRESION ARTERIAL AL INGRESO", "PRESIÓN ARTERIAL AL INGRESO"
+        ],
+        "ORGANOMEGALY": ["ORGANOMEGALY", "ORGANOMEGALIA"],
+        "HB": ["HB", "HEMOGLOBIN", "HEMOGLOBINA"],
+        "CREATININE": ["CREATININE", "CREATININA"],
+        "PCV": ["PCV", "HEMATOCRIT", "HEMATOCRITO"],
+        "PLATELET COUNT": [
+            "PLATELET COUNT", "PLATELETS", "PLAQUETAS",
+            "RECUENTO DE PLAQUETAS"
+        ],
+        "HIGHEST WBC": [
+            "HIGHEST WBC", "WBC", "WHITE BLOOD CELL",
+            "LEUCOCITOS", "RECUENTO DE LEUCOCITOS"
+        ],
+        "ALT": ["ALT", "ALANINE AMINOTRANSFERASE"]
+    }
+
+    def buscar(nombre):
+        for candidato in alias.get(nombre, [nombre]):
+            if candidato in df.columns:
+                return candidato
+        return None
+
+    X = pd.DataFrame(index=df.index)
+    faltantes = []
+
+    # Variables que deben venir ya codificadas igual que en entrenamiento.
+    directas = [
+        "AGE", "GENDER", "DURATION OF FEVER", "HEADACHE", "MYALGIA",
+        "ABDOMINAL PAIN", "RASH", "VOMITING", "BREATHLESSNESS",
+        "BLEEDING", "BP AT ADMISSION", "ORGANOMEGALY", "HB", "CREATININE"
+    ]
+
+    for col in directas:
+        origen = buscar(col)
+        if origen is None:
+            faltantes.append(col)
+        else:
+            X[col] = pd.to_numeric(df[origen], errors="coerce")
+
+    # Indicadores: se aceptan ya calculados o se derivan de los valores crudos.
+    derivadas = {
+        "PCV_ALTO": ("PCV", 42, "ge"),
+        "PLAQUETAS_BAJAS": ("PLATELET COUNT", 75000, "le"),
+        "WBC_ALTO": ("HIGHEST WBC", 7000, "ge"),
+        "ALT_ALTO": ("ALT", 70, "ge")
+    }
+
+    for indicador, (variable, umbral, comparador) in derivadas.items():
+        existente = buscar(indicador)
+        if existente is not None:
+            X[indicador] = pd.to_numeric(df[existente], errors="coerce")
+            continue
+
+        origen = buscar(variable)
+        if origen is None:
+            faltantes.append(f"{indicador} o {variable}")
+            continue
+
+        valores = pd.to_numeric(df[origen], errors="coerce")
+        if variable == "ALT":
+            valores = valores.fillna(26.0)
+        if comparador == "ge":
+            X[indicador] = (valores >= umbral).astype(float)
+        else:
+            X[indicador] = (valores <= umbral).astype(float)
+
+    if faltantes:
+        raise ValueError(
+            "Faltan columnas requeridas: " + ", ".join(faltantes)
+            + ". El Excel debe incluir las 18 variables del modelo, "
+              "o los valores originales PCV, PLATELET COUNT, HIGHEST WBC y ALT "
+              "para calcular los indicadores."
+        )
+
+    # Misma imputación aplicada en la limpieza original.
+    X["CREATININE"] = X["CREATININE"].fillna(0.5)
+
+    # Convertir todas las variables a formato numérico.
+    for col in COLUMNAS:
+        X[col] = pd.to_numeric(X[col], errors="coerce")
+
+    # Aplicar la misma codificación utilizada en limpiar.py.
+    # AGE: 1 = menor de 6 años -> 0; 2 = mayor de 6 años -> 1.
+    # GENDER: 1 = masculino -> 0; 2 = femenino -> 1.
+    # Síntomas y hallazgos: 1 = sí -> 1; 2 = no -> 0.
+    # Si el Excel ya contiene 0/1, se conserva sin cambios.
+    codificaciones_12 = {
+        "AGE": {1: 0, 2: 1},
+        "GENDER": {1: 0, 2: 1},
+        "HEADACHE": {1: 1, 2: 0},
+        "MYALGIA": {1: 1, 2: 0},
+        "ABDOMINAL PAIN": {1: 1, 2: 0},
+        "RASH": {1: 1, 2: 0},
+        "VOMITING": {1: 1, 2: 0},
+        "BREATHLESSNESS": {1: 1, 2: 0},
+        "BLEEDING": {1: 1, 2: 0},
+        "BP AT ADMISSION": {1: 1, 2: 0},
+        "ORGANOMEGALY": {1: 1, 2: 0},
+    }
+
+    for col, mapa in codificaciones_12.items():
+        valores = set(X[col].dropna().unique())
+
+        # Solo transformar cuando los datos usan la codificación original 1/2.
+        if valores and valores.issubset({1, 2}) and 2 in valores:
+            X[col] = X[col].map(mapa)
+
+    columnas_invalidas = X.columns[X.isna().any()].tolist()
+    if columnas_invalidas:
+        raise ValueError(
+            "Hay valores vacíos o no numéricos en: "
+            + ", ".join(columnas_invalidas)
+            + ". Completa esos datos en el Excel."
+        )
+
+    binarias = [
+        "AGE", "GENDER", "HEADACHE", "MYALGIA", "ABDOMINAL PAIN",
+        "RASH", "VOMITING", "BREATHLESSNESS", "BLEEDING",
+        "BP AT ADMISSION", "ORGANOMEGALY", "PCV_ALTO",
+        "PLAQUETAS_BAJAS", "WBC_ALTO", "ALT_ALTO"
+    ]
+    for col in binarias:
+        if not X[col].isin([0, 1]).all():
+            raise ValueError(
+                f"La columna {col} debe contener únicamente 0 y 1, "
+                "con la misma codificación usada para entrenar los modelos."
+            )
+
+    return original, X[COLUMNAS]
+
+
+def predecir_excel_lote(modelo, X, nombre_modelo):
+    pred = modelo.predict(X)
+    probabilidades = modelo.predict_proba(X)
+    clases = list(modelo.classes_)
+    if 0 not in clases or 1 not in clases:
+        raise ValueError(f"{nombre_modelo}: no se encontraron las clases 0 y 1.")
+
+    i0, i1 = clases.index(0), clases.index(1)
+    return pd.DataFrame({
+        f"{nombre_modelo} - Clasificación": [
+            "Dengue complicado" if int(v) == 1 else "Dengue no complicado"
+            for v in pred
+        ],
+        f"{nombre_modelo} - Prob. no complicado (%)":
+            (probabilidades[:, i0] * 100).round(2),
+        f"{nombre_modelo} - Prob. complicado (%)":
+            (probabilidades[:, i1] * 100).round(2)
+    })
+
+
 # ============================================================
 # CARGA DE MODELOS
 # ============================================================
@@ -515,25 +974,47 @@ except Exception as error:
 # Navegación horizontal en la parte superior
 top_left, top_right = st.columns([3, 2])
 with top_left:
-    st.markdown("## Modelo de predicción de dengue")
-    st.caption("DATA SCIENCE LAB · PROYECTO ACADÉMICO")
+    encabezado_icono, encabezado_texto = st.columns([0.16, 0.84])
+    with encabezado_icono:
+        st.image(str(BASE_DIR / "assets" / "healthicon.png"), width=82)
+    with encabezado_texto:
+        st.markdown("## Modelo de predicción de dengue")
+        st.markdown(
+            "Herramienta de análisis de datos que permite explorar información, "
+            "ejecutar modelos de clasificación y comparar sus resultados."
+        )
 
 with top_right:
-    if hasattr(st, "segmented_control"):
-        pagina = st.segmented_control(
-            "NAVEGACIÓN",
-            options=["Inicio", "Predicción"],
-            default="Inicio",
-            label_visibility="collapsed",
-            key="navegacion_principal"
-        )
-    else:
-        pagina = st.radio(
-            "NAVEGACIÓN",
-            ["Inicio", "Predicción"],
-            horizontal=True,
-            label_visibility="collapsed"
-        )
+    if "pagina_actual" not in st.session_state:
+        st.session_state.pagina_actual = "Inicio"
+
+    nav_inicio, nav_prediccion = st.columns(2, gap="small")
+
+    with nav_inicio:
+        st.markdown('<div class="nav-inicio">', unsafe_allow_html=True)
+        if st.button(
+            "Inicio",
+            key="btn_nav_inicio",
+            use_container_width=True,
+            type="primary" if st.session_state.pagina_actual == "Inicio" else "secondary"
+        ):
+            st.session_state.pagina_actual = "Inicio"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with nav_prediccion:
+        st.markdown('<div class="nav-prediccion">', unsafe_allow_html=True)
+        if st.button(
+            "Predicción",
+            key="btn_nav_prediccion",
+            use_container_width=True,
+            type="primary" if st.session_state.pagina_actual == "Predicción" else "secondary"
+        ):
+            st.session_state.pagina_actual = "Predicción"
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+pagina = st.session_state.pagina_actual
 
 st.divider()
 
@@ -543,19 +1024,6 @@ st.divider()
 # ============================================================
 
 if pagina == "Inicio":
-
-    st.markdown("""
-    <div class="hero">
-        <div class="hero-kicker">Plataforma académica · Analítica de datos</div>
-        <h1>Modelo de predicción de dengue</h1>
-        <p>
-            Herramienta académica de clasificación de dengue mediante
-            regresión logística y redes neuronales artificiales.
-            Explora los datos, ejecuta predicciones y compara el
-            rendimiento de ambos modelos.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
 
     st.markdown('<div class="section-kicker">Vista general</div>',
                 unsafe_allow_html=True)
@@ -624,6 +1092,11 @@ elif pagina == "Predicción":
     st.write(
         "Registra los datos demográficos, clínicos y de laboratorio. "
         "Después selecciona el modelo que deseas ejecutar."
+    )
+
+    st.info(
+        "Las estimaciones son orientativas y no constituyen un diagnóstico. "
+        "No sustituyen la valoración de un profesional de la salud."
     )
 
     with st.form("formulario_paciente", border=True):
@@ -818,21 +1291,6 @@ elif pagina == "Predicción":
                     mostrar_resultado(nombre, modelo, entrada)
                 )
 
-            if len(resultados) == 2:
-                st.divider()
-                st.markdown("#### Comparación de estimaciones")
-                comparacion = pd.DataFrame(resultados)
-                comparacion["Probabilidad no complicado"] = (
-                    comparacion["Probabilidad no complicado"] * 100
-                ).map(lambda x: f"{x:.2f}%")
-                comparacion["Probabilidad complicado"] = (
-                    comparacion["Probabilidad complicado"] * 100
-                ).map(lambda x: f"{x:.2f}%")
-                st.dataframe(
-                    comparacion,
-                    use_container_width=True,
-                    hide_index=True
-                )
 
         except Exception as error:
             st.error("Ocurrió un problema al ejecutar la predicción.")
@@ -840,11 +1298,128 @@ elif pagina == "Predicción":
 
     
 
+
+# ============================================================
+# PREDICCIÓN POR LOTE
+# ============================================================
+
+if pagina == "Predicción":
+    st.divider()
+    st.markdown('<div class="section-kicker">Procesamiento de varios registros</div>',
+                unsafe_allow_html=True)
+    st.subheader("Predicción por lote mediante Excel")
+    st.write(
+        "Carga un archivo .xlsx para obtener predicciones de varios pacientes "
+        "con uno o ambos modelos."
+    )
+
+    archivo_lote = st.file_uploader(
+        "Seleccionar archivo Excel",
+        type=["xlsx"],
+        key="archivo_excel_lote"
+    )
+    modelo_lote = st.selectbox(
+        "Modelo para procesar el archivo",
+        [
+            "Comparar ambos modelos",
+            "Regresión logística",
+            "Red neuronal artificial"
+        ],
+        key="selector_modelo_lote"
+    )
+
+    if archivo_lote is not None:
+        if st.button(
+            "Procesar todos los registros",
+            type="primary",
+            use_container_width=True,
+            key="boton_procesar_lote"
+        ):
+            try:
+                with st.spinner("Validando datos y generando predicciones..."):
+                    datos_originales, X_lote = preparar_excel_lote(archivo_lote)
+                    resultado = datos_originales.copy()
+
+                    if modelo_lote in [
+                        "Comparar ambos modelos", "Regresión logística"
+                    ]:
+                        resultado = pd.concat(
+                            [
+                                resultado,
+                                predecir_excel_lote(
+                                    modelo_logistico, X_lote, "Regresión logística"
+                                )
+                            ],
+                            axis=1
+                        )
+
+                    if modelo_lote in [
+                        "Comparar ambos modelos", "Red neuronal artificial"
+                    ]:
+                        resultado = pd.concat(
+                            [
+                                resultado,
+                                predecir_excel_lote(
+                                    modelo_neuronal, X_lote,
+                                    "Red neuronal artificial"
+                                )
+                            ],
+                            axis=1
+                        )
+
+                st.success(
+                    f"Se procesaron correctamente {len(resultado)} registros."
+                )
+                st.dataframe(
+                    resultado,
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+                st.markdown("#### Resumen de resultados")
+                c1, c2 = st.columns(2)
+
+                if modelo_lote == "Regresión logística":
+                    serie = resultado["Regresión logística - Clasificación"]
+                elif modelo_lote == "Red neuronal artificial":
+                    serie = resultado["Red neuronal artificial - Clasificación"]
+                else:
+                    serie = resultado["Regresión logística - Clasificación"]
+
+                c1.metric(
+                    "Dengue no complicado",
+                    int((serie == "Dengue no complicado").sum())
+                )
+                c2.metric(
+                    "Dengue complicado",
+                    int((serie == "Dengue complicado").sum())
+                )
+
+                buffer_excel = io.BytesIO()
+                with pd.ExcelWriter(buffer_excel, engine="openpyxl") as writer:
+                    resultado.to_excel(
+                        writer, index=False, sheet_name="Predicciones"
+                    )
+
+                st.download_button(
+                    "Descargar resultados en Excel",
+                    data=buffer_excel.getvalue(),
+                    file_name="resultados_prediccion_dengue.xlsx",
+                    mime=(
+                        "application/vnd.openxmlformats-officedocument."
+                        "spreadsheetml.sheet"
+                    ),
+                    use_container_width=True
+                )
+
+            except Exception as error:
+                st.error(f"No se pudo procesar el archivo: {error}")
+
 # ============================================================
 # PIE DE PÁGINA
 # ============================================================
 
 st.divider()
 st.caption(
-    "Modelo de predicción de dengue | Proyecto académico"
+    "Modelo de predicción de dengue"
 )
