@@ -657,6 +657,16 @@ st.markdown("""
         color: #FFFFFF !important;
     }
 
+
+    /* Ocultar los enlaces automáticos que Streamlit agrega junto a los encabezados */
+    [data-testid="stHeaderActionElements"],
+    [data-testid="stHeadingWithActionElements"] a,
+    [data-testid="stHeadingWithActionElements"] button {
+        display: none !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+
 </style>
 """, unsafe_allow_html=True)
 
