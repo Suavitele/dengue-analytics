@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import joblib
 import io
+import altair as alt
 
 from pathlib import Path
 
@@ -1076,6 +1077,62 @@ if pagina == "Inicio":
             </p>
         </div>
         """, unsafe_allow_html=True)
+
+    # ========================================================
+    # ESTADÍSTICAS Y COMPARACIÓN DE LOS MODELOS
+    # ========================================================
+
+    st.write("")
+    st.markdown('<div class="section-kicker">Evaluación del desempeño</div>',
+                unsafe_allow_html=True)
+    st.subheader("Tabla comparativa de métricas")
+
+    tabla_metricas = METRICAS.copy()
+    tabla_metricas["Regresión logística"] = tabla_metricas[
+        "Regresión logística"
+    ].map(lambda valor: f"{valor * 100:.2f}%")
+    tabla_metricas["Red neuronal"] = tabla_metricas[
+        "Red neuronal"
+    ].map(lambda valor: f"{valor * 100:.2f}%")
+
+    st.dataframe(
+        tabla_metricas,
+        use_container_width=True,
+        hide_index=True
+    )
+
+    st.markdown("### Comparación visual")
+
+    datos_grafica = METRICAS.melt(
+        id_vars="Métrica",
+        value_vars=["Regresión logística", "Red neuronal"],
+        var_name="Modelo",
+        value_name="Resultado"
+    )
+    datos_grafica["Resultado"] = datos_grafica["Resultado"] * 100
+
+    grafica = alt.Chart(datos_grafica).mark_bar(size=28).encode(
+        x=alt.X("Métrica:N", title="Métrica", axis=alt.Axis(labelAngle=0)),
+        xOffset=alt.XOffset("Modelo:N"),
+        y=alt.Y("Resultado:Q", title="Resultado (%)"),
+        color=alt.Color(
+            "Modelo:N",
+            scale=alt.Scale(
+                domain=["Regresión logística", "Red neuronal"],
+                range=["#237A57", "#7CC9A5"]
+            ),
+            legend=alt.Legend(title="Modelo")
+        ),
+        tooltip=[
+            alt.Tooltip("Métrica:N", title="Métrica"),
+            alt.Tooltip("Modelo:N", title="Modelo"),
+            alt.Tooltip("Resultado:Q", title="Resultado", format=".2f")
+        ]
+    ).properties(
+        height=360
+    )
+
+    st.altair_chart(grafica, use_container_width=True)
 
     st.write("")
     st.markdown('<div class="section-kicker">Propósito</div>',
